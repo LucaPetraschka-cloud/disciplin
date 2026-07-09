@@ -40,6 +40,27 @@ export async function signInWithEmail(email) {
   if (error) throw error;
 }
 
+// Email + password sign-in. If no account exists yet, one is created on the spot
+// (works instantly when "Confirm email" is disabled in Supabase) so the same
+// email + password just works on every device with no confirmation mail.
+export async function signInOrSignUp(email, password) {
+  if (!client) throw new Error('Bitte zuerst Project URL & Key speichern.');
+  const first = await client.auth.signInWithPassword({ email, password });
+  if (!first.error) return { created: false };
+
+  const { data, error } = await client.auth.signUp({ email, password });
+  if (error) {
+    if (/already registered|already exists/i.test(error.message)) {
+      throw new Error('Dieses Konto gibt es schon, aber das Passwort stimmt nicht. Bitte das Passwort prüfen.');
+    }
+    throw error;
+  }
+  if (!data.session) {
+    throw new Error('Konto erstellt, aber Supabase verlangt noch eine E-Mail-Bestätigung. Bitte in Supabase unter Authentication → Providers → Email den Schalter „Confirm email" ausschalten und erneut versuchen.');
+  }
+  return { created: true };
+}
+
 export async function signOut() {
   if (client) await client.auth.signOut();
   teardown(false);

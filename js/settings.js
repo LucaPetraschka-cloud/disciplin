@@ -3,7 +3,7 @@ import { navigate } from './router.js';
 import { ICONS } from './icons.js';
 import { WEEKDAY_LABELS_LONG } from './calendarUtils.js';
 import { connectGoogle, disconnectGoogle, isGoogleConnected } from './googleCalendar.js';
-import { configureSupabase, signInWithEmail, signOut, syncStatus } from './sync.js';
+import { configureSupabase, signInOrSignUp, signOut, syncStatus } from './sync.js';
 
 const SERIES_SWATCHES = ['--series-1','--series-2','--series-3','--series-4','--series-5','--series-6','--series-7','--series-8'];
 
@@ -209,10 +209,11 @@ function renderSync(el) {
     ${cfg.supabaseUrl ? `
     <div class="card">
       <div class="card-title-row"><h2>Anmelden</h2></div>
-      <div class="hint" style="margin-bottom:10px;">Melde dich mit derselben E-Mail auf jedem Gerät an, damit die Daten zusammenlaufen (Magic Link, kein Passwort nötig).</div>
+      <div class="hint" style="margin-bottom:10px;">Nutze auf <b>jedem</b> Gerät dieselbe E-Mail und dasselbe Passwort — dann laufen alle Einträge zusammen. Beim ersten Mal wird das Konto automatisch angelegt.</div>
       ${status.connected ? `<button class="btn danger" id="s-logout" style="width:100%;">Abmelden</button>` : `
       <div class="field-group"><label class="field">E-Mail</label><input type="email" id="s-email" placeholder="du@beispiel.de"></div>
-      <button class="btn primary" id="s-login" style="width:100%;">Magic Link senden</button>
+      <div class="field-group"><label class="field">Passwort</label><input type="password" id="s-pass" placeholder="mind. 6 Zeichen" autocomplete="new-password"></div>
+      <button class="btn primary" id="s-login" style="width:100%;">Anmelden / Konto erstellen</button>
       `}
     </div>` : ''}
   `;
@@ -225,11 +226,20 @@ function renderSync(el) {
     configureSupabase(supabaseUrl, supabaseAnonKey);
     renderSync(el);
   });
-  el.querySelector('#s-login')?.addEventListener('click', async () => {
+  el.querySelector('#s-login')?.addEventListener('click', async (e) => {
     const email = el.querySelector('#s-email').value.trim();
-    if (!email) return;
-    try { await signInWithEmail(email); alert('Magic Link gesendet — E-Mail-Postfach prüfen.'); }
-    catch (err) { alert('Fehler: ' + err.message); }
+    const password = el.querySelector('#s-pass').value;
+    if (!email || !password) { alert('Bitte E-Mail und Passwort eingeben.'); return; }
+    if (password.length < 6) { alert('Das Passwort muss mindestens 6 Zeichen haben.'); return; }
+    const btn = e.currentTarget;
+    btn.disabled = true; btn.textContent = 'Verbinde…';
+    try {
+      await signInOrSignUp(email, password);
+      renderSync(el);
+    } catch (err) {
+      alert('Fehler: ' + err.message);
+      btn.disabled = false; btn.textContent = 'Anmelden / Konto erstellen';
+    }
   });
   el.querySelector('#s-logout')?.addEventListener('click', async () => { await signOut(); renderSync(el); });
 }
