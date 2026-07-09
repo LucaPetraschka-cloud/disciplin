@@ -83,8 +83,12 @@ const TMS_SUBTESTS = [
 ];
 const TMS_ZIEL = 93;
 
+// Supabase project is baked in so every device only needs email + password.
+// The anon key is a public, RLS-guarded client key (safe to ship in the app);
+// it grants nothing without a signed-in user. Not the secret/service_role key.
 const CONFIG_DEFAULTS = {
-  supabaseUrl: '', supabaseAnonKey: '',
+  supabaseUrl: 'https://qmghvejxutovagbdajva.supabase.co',
+  supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtZ2h2ZWp4dXRvdmFnYmRhanZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1ODMwODIsImV4cCI6MjA5OTE1OTA4Mn0.rKfC0w5VgRo0rMdaNOk1fRZKebOne0bwSfDxO3ffvUU',
   googleClientId: '', googleApiKey: '', googleCalendarId: 'primary',
   tmsPlanDays: { 0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true },
   tmsPerDay: 1,
@@ -133,8 +137,14 @@ seedDefaults();
 // Config (settings that aren't a list table)
 // ---------------------------------------------------------------------------
 function getConfig() {
-  try { return { ...CONFIG_DEFAULTS, ...JSON.parse(localStorage.getItem(LS_PREFIX + 'config') || '{}') }; }
-  catch { return { ...CONFIG_DEFAULTS }; }
+  let cfg;
+  try { cfg = { ...CONFIG_DEFAULTS, ...JSON.parse(localStorage.getItem(LS_PREFIX + 'config') || '{}') }; }
+  catch { cfg = { ...CONFIG_DEFAULTS }; }
+  // Fall back to the baked-in project when a stored value is blank, so the
+  // Supabase connection is always available even on configs seeded earlier.
+  if (!cfg.supabaseUrl) cfg.supabaseUrl = CONFIG_DEFAULTS.supabaseUrl;
+  if (!cfg.supabaseAnonKey) cfg.supabaseAnonKey = CONFIG_DEFAULTS.supabaseAnonKey;
+  return cfg;
 }
 function setConfig(patch) {
   const next = { ...getConfig(), ...patch };
