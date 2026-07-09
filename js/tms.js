@@ -150,6 +150,8 @@ export function render(el) {
       </div>
     </div>
 
+    <div class="wide-2col">
+    <div>
     <div class="stat-grid" style="margin-bottom:16px;">
       <div class="stat-tile"><div class="v" id="tile-tw">—</div><div class="l">Gesamtwert</div></div>
       <div class="stat-tile"><div class="v" id="tile-pr">—</div><div class="l">Prozentrang</div></div>
@@ -157,7 +159,9 @@ export function render(el) {
     </div>
 
     <div class="card" id="baseline-card"></div>
+    </div>
 
+    <div>
     <div class="card">
       <div class="card-title-row"><h2>Trefferquote-Verlauf</h2>
         <div class="segmented" id="tms-range" style="width:auto;">
@@ -193,6 +197,8 @@ export function render(el) {
         <thead><tr><th>Datum</th><th>Untertest</th><th class="num">Aufg.</th><th class="num">Richtig</th><th class="num">Zeit</th><th class="num">Quote</th><th></th></tr></thead>
         <tbody id="tms-log-body"></tbody>
       </table>
+    </div>
+    </div>
     </div>
   `;
 

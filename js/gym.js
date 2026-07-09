@@ -116,11 +116,15 @@ export function render(el) {
       <div><h1>Gym</h1><div class="sub">Training & Progress</div></div>
     </div>
 
+    <div class="wide-2col">
+    <div>
     <div class="card" id="gym-day-card">
       <div class="card-title-row"><h2>Heutiges Training</h2></div>
       <div id="gym-day-section"></div>
     </div>
+    </div>
 
+    <div>
     <div class="card">
       <div class="card-title-row"><h2>Progress</h2>
         <div class="segmented" id="gym-range" style="width:auto;">
@@ -129,6 +133,8 @@ export function render(el) {
       </div>
       <div class="tab-row" id="gym-exercise-picker"></div>
       <div class="chart-wrap"><canvas id="gym-chart"></canvas></div>
+    </div>
+    </div>
     </div>
   `;
 

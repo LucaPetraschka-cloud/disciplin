@@ -338,6 +338,63 @@ table.data-table { width: 100%; border-collapse: collapse; }
 .mini-cal .info .next-when { font-size: 12px; color: var(--text-secondary); margin-top: 1px; }
 .mini-cal .chev { color: var(--text-muted); font-size: 18px; }
 
+/* --- Home: 2-day timeline widget (Apple calendar widget style) ------------ */
+.day-widget {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-m);
+  padding: 14px 14px 12px;
+  cursor: pointer;
+  margin-bottom: 12px;
+}
+.daycol { min-width: 0; }
+.daycol-head { display: flex; align-items: baseline; gap: 7px; margin-bottom: 8px; }
+.daycol-head .lbl { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
+.daycol-head .lbl.today { color: var(--accent-gold); }
+.daycol-head .num { font-size: 20px; font-weight: 800; line-height: 1; }
+.daycol-body { position: relative; height: 300px; }
+.hour-line { position: absolute; left: 24px; right: 0; border-top: 1px solid var(--gridline); }
+.hour-lbl {
+  position: absolute; left: 0; width: 20px; text-align: right;
+  font-size: 8.5px; color: var(--text-muted); transform: translateY(-55%);
+  font-variant-numeric: tabular-nums;
+}
+.w-event {
+  position: absolute; left: 28px; right: 1px;
+  border-radius: 5px; border-left: 3px solid;
+  padding: 1px 5px; overflow: hidden;
+  min-height: 12px;
+}
+.w-event .t { font-size: 10.5px; font-weight: 700; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.w-event .tm { font-size: 9px; color: var(--text-secondary); line-height: 1.2; }
+.now-line { position: absolute; left: 24px; right: 0; border-top: 2px solid #ff453a; z-index: 3; }
+.now-line::before { content: ''; position: absolute; left: -4px; top: -4.5px; width: 7px; height: 7px; border-radius: 50%; background: #ff453a; }
+.allday-row { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 6px; }
+.allday-chip {
+  font-size: 9.5px; font-weight: 700; padding: 2px 7px; border-radius: 999px;
+  border: 1px solid; color: var(--text-secondary);
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* --- Home: current / next event line --------------------------------------- */
+.now-next {
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-m);
+  padding: 9px 13px;
+  margin-bottom: 12px;
+  display: flex; flex-direction: column; gap: 5px;
+}
+.nn-row { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.nn-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.nn-dot.pulse { box-shadow: 0 0 0 3px rgba(255,255,255,0.07); }
+.nn-lbl { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); flex-shrink: 0; width: 48px; }
+.nn-title { font-size: 12.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nn-time { font-size: 11.5px; color: var(--text-secondary); flex-shrink: 0; margin-left: auto; font-variant-numeric: tabular-nums; }
+
 .tile-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
 .tile {
   aspect-ratio: 1;
@@ -470,6 +527,25 @@ table.data-table { width: 100%; border-collapse: collapse; }
   width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .section-header-icon svg { width: 20px; height: 20px; stroke-width: 1.8; fill: none; }
+
+/* ==========================================================================
+   Landscape / wide layout (iPad Air quer: 1180×820, Mac). Ziel: wenig Leerraum
+   — Inhalte laufen zweispaltig, das Home-Widget bekommt eine hohe Zeitachse.
+   ========================================================================== */
+@media (min-width: 900px) {
+  #app, #bottom-nav { max-width: 1120px; }
+  #screen { padding-left: 28px; padding-right: 28px; }
+
+  /* Home: Widget links (hoch), Rest rechts */
+  .home-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 18px; align-items: start; }
+  .daycol-body { height: 460px; }
+  .day-widget { margin-bottom: 0; }
+  .home-title { font-size: 34px; }
+
+  /* Unterseiten: Karten zweispaltig */
+  .wide-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; align-items: start; }
+  .wide-2col > div { min-width: 0; }
+}
 
 @media (min-width: 560px) {
   #app { border-left: 1px solid var(--border-hairline); border-right: 1px solid var(--border-hairline); }

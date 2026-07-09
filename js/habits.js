@@ -133,13 +133,17 @@ export function render(el) {
       <div><h1>To-Dos & Habits</h1><div class="sub">Setzt sich jeden Kalendermonat zurück</div></div>
     </div>
 
+    <div class="wide-2col">
+    <div>
     <div class="card">
       <div class="card-title-row"><h2>Habits — ${MONTH_NOW}</h2></div>
       <div class="hint" style="margin-bottom:8px;">Anteil erledigter Habits pro Tag</div>
       <div style="height:150px;position:relative;"><canvas id="habit-chart"></canvas></div>
     </div>
     <div id="habits-list"></div>
+    </div>
 
+    <div>
     <div class="card">
       <div class="card-title-row"><h2>To-Dos</h2></div>
       <div id="todo-list"></div>
@@ -147,6 +151,8 @@ export function render(el) {
         <input type="text" id="new-todo" placeholder="Neues To-Do…">
         <button class="btn primary" id="add-todo" style="flex:0 0 auto;">${ICONS.plus.replace('<svg', '<svg style="width:15px;height:15px;stroke:currentColor;stroke-width:2"')}</button>
       </div>
+    </div>
+    </div>
     </div>
   `;
 
