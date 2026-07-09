@@ -1,4 +1,4 @@
-const CACHE = 'disciplin-v4';
+const CACHE = 'disciplin-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -47,7 +47,9 @@ self.addEventListener('fetch', (e) => {
   if (url.origin !== location.origin) return;
 
   e.respondWith(
-    fetch(e.request)
+    // 'no-cache' bypasses the HTTP disk cache (revalidates with the server), so
+    // deploys show up on next launch instead of after the cache max-age expires.
+    fetch(e.request, { cache: 'no-cache' })
       .then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((cache) => cache.put(e.request, copy));

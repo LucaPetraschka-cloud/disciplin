@@ -407,20 +407,29 @@ table.data-table { width: 100%; border-collapse: collapse; }
   letter-spacing: .02em;
   color: var(--text-primary);
 }
-.tile svg { width: 26px; height: 26px; stroke-width: 1.7; fill: none; }
-.tile.tms { background: linear-gradient(155deg, rgba(57,135,229,.20), rgba(57,135,229,.05)); }
-.tile.tms svg { stroke: var(--section-tms); }
-.tile.gym { background: linear-gradient(155deg, rgba(217,89,38,.22), rgba(217,89,38,.05)); }
-.tile.gym svg { stroke: var(--section-gym); }
-.tile.todos { background: linear-gradient(155deg, rgba(25,158,112,.22), rgba(25,158,112,.05)); }
-.tile.todos svg { stroke: var(--section-habits); }
+/* schlicht: monochrome Kacheln, große weiße Icons */
+.tile { background: var(--surface-1); gap: 12px; }
+.tile:active { background: var(--surface-2); }
+.tile svg { width: 44px; height: 44px; stroke-width: 1.5; fill: none; stroke: var(--text-primary); }
+.tile span { font-size: 13px; letter-spacing: .05em; }
 
 .goal-strip {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 10px 14px; border-radius: var(--radius-m);
-  background: rgba(232,185,74,0.08); border: 1px solid rgba(232,185,74,0.28);
-  font-size: 12.5px; font-weight: 700; color: var(--accent-gold);
+  background: var(--surface-1); border: 1px solid var(--border-hairline);
+  font-size: 12.5px; font-weight: 700; color: var(--text-secondary);
   margin-bottom: 4px;
+}
+.goal-strip .goal-value { color: var(--text-primary); font-size: 14px; }
+
+.home-quote {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+  line-height: 1.5;
+  margin: -8px 0 16px;
+  padding: 0 14px;
 }
 
 /* ==========================================================================

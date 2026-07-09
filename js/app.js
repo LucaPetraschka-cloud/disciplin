@@ -12,7 +12,7 @@ import { initGoogleAutoRefresh } from './googleCalendar.js';
 const NAV_ITEMS = [
   { route: '', path: '/', icon: 'home', label: 'Home' },
   { route: 'calendar', path: '/calendar', icon: 'calendar', label: 'Kalender' },
-  { route: 'tms', path: '/tms', icon: 'target', label: 'TMS' },
+  { route: 'tms', path: '/tms', icon: 'cap', label: 'TMS' },
   { route: 'gym', path: '/gym', icon: 'dumbbell', label: 'Gym' },
   { route: 'habits', path: '/habits', icon: 'checklist', label: 'To-Dos' },
 ];

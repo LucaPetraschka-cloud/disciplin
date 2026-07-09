@@ -135,8 +135,9 @@ export function render(el) {
       <button class="topbar .back-btn" id="settings-btn" style="background:var(--surface-1);border:1px solid var(--border-hairline);color:var(--text-primary);width:34px;height:34px;border-radius:999px;display:flex;align-items:center;justify-content:center;cursor:pointer;">${ICONS.gear.replace('<svg', '<svg style="width:18px;height:18px;fill:currentColor"')}</button>
     </div>
     <div class="home-title">DISCIPLIN</div>
+    <div class="home-quote">„${quote.text}"</div>
 
-    <div class="goal-strip">${ICONS.target.replace('<svg', '<svg style="width:15px;height:15px;stroke:currentColor;stroke-width:2"')} Ziel TMS-Testwert: <span style="color:var(--text-primary)">93</span></div>
+    <div class="goal-strip">${ICONS.flag.replace('<svg', '<svg style="width:14px;height:14px;stroke:currentColor;stroke-width:1.9"')} Ziel Prozentrang: <span class="goal-value">93</span></div>
     <div style="height:12px"></div>
 
     <div class="home-grid">
@@ -149,14 +150,9 @@ export function render(el) {
         <div class="now-next" id="now-next">${nowNextHtml()}</div>
 
         <div class="tile-grid">
-          <div class="tile tms" data-nav="/tms">${ICONS.target}<span>TMS</span></div>
-          <div class="tile gym" data-nav="/gym">${ICONS.dumbbell}<span>GYM</span></div>
-          <div class="tile todos" data-nav="/habits">${ICONS.checklist}<span>TO-DOS</span></div>
-        </div>
-
-        <div class="quote-card">
-          <div class="quote-text">„${quote.text}"</div>
-          <div class="quote-author">— ${quote.author}</div>
+          <div class="tile" data-nav="/tms">${ICONS.cap}<span>TMS</span></div>
+          <div class="tile" data-nav="/gym">${ICONS.dumbbell}<span>GYM</span></div>
+          <div class="tile" data-nav="/habits">${ICONS.checklist}<span>TO-DOS</span></div>
         </div>
       </div>
     </div>
