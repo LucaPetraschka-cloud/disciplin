@@ -59,6 +59,16 @@ export function disconnectGoogle() {
   localStorage.removeItem(TOKEN_KEY);
 }
 
+// Google returns RFC3339 timestamps (often UTC, e.g. "...T04:00:00Z"). The rest
+// of the app treats event.start as local wall-clock ("YYYY-MM-DDTHH:mm"), so we
+// convert here into the device's local time — otherwise times/days are shifted.
+function toLocalWallClock(dateTime, date) {
+  if (!dateTime) return date; // all-day event: keep the plain "YYYY-MM-DD"
+  const d = new Date(dateTime);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 export async function fetchGoogleEvents() {
   if (!isGoogleConnected()) return;
   const cfg = Store.getConfig();
@@ -79,8 +89,8 @@ export async function fetchGoogleEvents() {
       googleEventId: item.id,
       title: item.summary || '(ohne Titel)',
       category: 'google', source: 'google', recurrence: 'none',
-      start: item.start.dateTime || item.start.date,
-      end: item.end?.dateTime || item.end?.date || null,
+      start: toLocalWallClock(item.start.dateTime, item.start.date),
+      end: toLocalWallClock(item.end?.dateTime, item.end?.date),
       allDay: !item.start.dateTime,
     }, { silent: true });
   });
