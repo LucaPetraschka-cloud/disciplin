@@ -89,7 +89,10 @@ const TMS_ZIEL = 93;
 const CONFIG_DEFAULTS = {
   supabaseUrl: 'https://qmghvejxutovagbdajva.supabase.co',
   supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtZ2h2ZWp4dXRvdmFnYmRhanZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1ODMwODIsImV4cCI6MjA5OTE1OTA4Mn0.rKfC0w5VgRo0rMdaNOk1fRZKebOne0bwSfDxO3ffvUU',
-  googleClientId: '', googleApiKey: '', googleCalendarId: 'primary',
+  // Google OAuth Client-ID is a public identifier (not a secret), baked in so
+  // every device can connect Google Calendar with one tap. Read-only scope.
+  googleClientId: '917209640166-vh2to8cq6l5hm6qnulk9cvta7guldcga.apps.googleusercontent.com',
+  googleApiKey: '', googleCalendarId: 'primary',
   tmsPlanDays: { 0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true },
   tmsPerDay: 1,
   gymTime: '18:00',
@@ -144,6 +147,7 @@ function getConfig() {
   // Supabase connection is always available even on configs seeded earlier.
   if (!cfg.supabaseUrl) cfg.supabaseUrl = CONFIG_DEFAULTS.supabaseUrl;
   if (!cfg.supabaseAnonKey) cfg.supabaseAnonKey = CONFIG_DEFAULTS.supabaseAnonKey;
+  if (!cfg.googleClientId) cfg.googleClientId = CONFIG_DEFAULTS.googleClientId;
   return cfg;
 }
 function setConfig(patch) {
