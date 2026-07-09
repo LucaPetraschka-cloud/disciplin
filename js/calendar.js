@@ -199,9 +199,9 @@ export function render(el) {
 
     <div class="card" style="text-align:center;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <button class="btn ghost" id="nav-prev">${ICONS.chevronLeft.replace('<svg', '<svg style="width:18px;height:18px;stroke:currentColor;stroke-width:2"')}</button>
+        <button class="btn ghost" id="nav-prev">${ICONS.chevronLeft.replace('<svg', '<svg style="width:18px;height:18px;stroke:var(--text-primary);stroke-width:2.4"')}</button>
         <div id="nav-label" style="font-weight:700;font-size:14px;"></div>
-        <button class="btn ghost" id="nav-next" style="transform:rotate(180deg);">${ICONS.chevronLeft.replace('<svg', '<svg style="width:18px;height:18px;stroke:currentColor;stroke-width:2"')}</button>
+        <button class="btn ghost" id="nav-next" style="transform:rotate(180deg);">${ICONS.chevronLeft.replace('<svg', '<svg style="width:18px;height:18px;stroke:var(--text-primary);stroke-width:2.4"')}</button>
       </div>
       <div id="cal-body"></div>
     </div>

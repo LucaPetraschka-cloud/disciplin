@@ -1,8 +1,43 @@
 import { Store } from './store.js';
 import { navigate } from './router.js';
 import { ICONS } from './icons.js';
+import { lineChart, destroyChart, resolveColor } from './charts.js';
 
 function daysInMonth(year, month) { return new Date(year, month + 1, 0).getDate(); }
+
+let habitChart = null;
+
+// Daily completion rate this month: share of active habits ticked off each day.
+function habitCompletionSeries() {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth(), todayNum = now.getDate();
+  const mp = String(m + 1).padStart(2, '0');
+  const habits = Store.habits();
+  const total = habits.length || 1;
+  const logsByHabit = habits.map(h => Store.habitLogs(h.id));
+  const labels = [], data = [];
+  for (let d = 1; d <= todayNum; d++) {
+    const dk = `${y}-${mp}-${String(d).padStart(2, '0')}`;
+    let done = 0;
+    logsByHabit.forEach(logs => { if (logs.some(l => l.date === dk && l.done)) done++; });
+    labels.push(String(d));
+    data.push(Math.round((done / total) * 100));
+  }
+  return { labels, data };
+}
+
+function renderHabitChart(el) {
+  const canvas = el.querySelector('#habit-chart');
+  if (!canvas || !window.Chart) return;
+  const { labels, data } = habitCompletionSeries();
+  destroyChart(habitChart);
+  const green = resolveColor('var(--section-habits)');
+  habitChart = lineChart(canvas.getContext('2d'), {
+    labels,
+    datasets: [{ data, color: green, fill: true, backgroundColor: green + '22' }],
+    yLabel: '% erledigt', suggestedMax: 100,
+  });
+}
 
 function habitCard(habit) {
   const now = new Date();
@@ -58,6 +93,7 @@ function renderHabits(el) {
         const existing = logs.find(l => l.habitId === habitId && l.date === date);
         Store.upsert('habitLogs', { id: existing?.id, habitId, date, done: !(existing && existing.done) });
         renderHabits(el);
+        renderHabitChart(el);
       });
     });
   });
@@ -99,6 +135,8 @@ export function render(el) {
 
     <div class="card">
       <div class="card-title-row"><h2>Habits — ${MONTH_NOW}</h2></div>
+      <div class="hint" style="margin-bottom:8px;">Anteil erledigter Habits pro Tag</div>
+      <div style="height:150px;position:relative;"><canvas id="habit-chart"></canvas></div>
     </div>
     <div id="habits-list"></div>
 
@@ -127,11 +165,12 @@ export function render(el) {
   el.querySelector('#new-todo').addEventListener('keydown', (e) => { if (e.key === 'Enter') addTodo(); });
 
   renderHabits(el);
+  renderHabitChart(el);
   renderTodos(el);
 
   const off = Store.on('mutation', (d) => {
-    if (d.fromRemote && ['habits','habitLogs'].includes(d.table)) renderHabits(el);
+    if (d.fromRemote && ['habits','habitLogs'].includes(d.table)) { renderHabits(el); renderHabitChart(el); }
     if (d.fromRemote && d.table === 'todos') renderTodos(el);
   });
-  return off;
+  return () => { off(); destroyChart(habitChart); };
 }

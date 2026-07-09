@@ -122,7 +122,6 @@ function seedDefaults() {
     write('habits', [
       { id: uid(), name: 'TMS lernen', color: 'var(--series-1)', order: 0, active: true },
       { id: uid(), name: 'Gym', color: 'var(--series-8)', order: 1, active: true },
-      { id: uid(), name: 'Kein Zucker', color: 'var(--series-2)', order: 2, active: true },
     ]);
     write('habitLogs', []);
     write('todos', [

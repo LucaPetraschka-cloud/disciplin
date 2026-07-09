@@ -11,7 +11,7 @@ export function render(el) {
 
   el.innerHTML = `
     <div style="display:flex;justify-content:flex-end;margin-bottom:-30px;position:relative;z-index:1;">
-      <button class="topbar .back-btn" id="settings-btn" style="background:var(--surface-1);border:1px solid var(--border-hairline);color:var(--text-muted);width:34px;height:34px;border-radius:999px;display:flex;align-items:center;justify-content:center;cursor:pointer;">${ICONS.gear.replace('<svg', '<svg style="width:17px;height:17px;stroke:currentColor;stroke-width:1.8"')}</button>
+      <button class="topbar .back-btn" id="settings-btn" style="background:var(--surface-1);border:1px solid var(--border-hairline);color:var(--text-muted);width:34px;height:34px;border-radius:999px;display:flex;align-items:center;justify-content:center;cursor:pointer;">${ICONS.gear.replace('<svg', '<svg style="width:18px;height:18px;fill:currentColor"')}</button>
     </div>
     <div class="home-title">DISCIPLIN</div>
 
