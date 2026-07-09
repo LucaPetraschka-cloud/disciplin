@@ -21,6 +21,26 @@ export function categoryLabel(cat) {
   return { tms: 'TMS', gym: 'Gym', stundenplan: 'Stundenplan', google: 'Google Kalender', other: 'Sonstiges' }[cat] || 'Sonstiges';
 }
 
+// Colour each school subject to match its Google Calendar colour (same hues as the
+// Google palette). "Ethik = schwarz" uses graphite grey instead — pure black is
+// invisible on the app's dark background and Google has no true-black option.
+export function subjectColor(title) {
+  if (!title) return null;
+  const t = title.toLowerCase();
+  if (t.includes('mathe')) return '#039be5';                             // blau
+  if (t.includes('deutsch')) return '#d50000';                           // rot
+  if (t.includes('pug') || t.includes('kunst')) return '#f6bf26';        // gelb
+  if (t.includes('biologie') || t.includes('englisch')) return '#0b8043';// grün
+  if (t.includes('chemie') || t.includes('seminar')) return '#8e24aa';   // lila
+  if (t.includes('geschichte') || t.includes('geografie') || t.includes('geographie')) return '#f4511e'; // orange
+  if (t.includes('sport')) return '#e67c73';                             // pink
+  if (t.includes('ethik')) return '#9aa0a6';                             // graphit (statt schwarz)
+  return null;
+}
+export function eventColor(ev) {
+  return subjectColor(ev.title) || categoryColor(ev.category);
+}
+
 // --- Virtual (auto-generated) entries -------------------------------------
 
 export function tmsPlanForDate(date) {
@@ -39,29 +59,11 @@ export function gymSessionForDate(date) {
   return Store.gymDays().find(d => d.weekday === date.getDay()) || null;
 }
 
+// TMS- und Gym-Termine kommen aus dem echten Google Kalender — die App erzeugt
+// dafür keine eigenen (doppelten) Einträge mehr. (tmsPlanForDate/gymSessionForDate
+// bleiben für andere Screens erhalten.)
 function virtualEventsForDate(date) {
-  const cfg = Store.getConfig();
-  const events = [];
-  const gym = gymSessionForDate(date);
-  if (gym) {
-    events.push({
-      id: `virtual-gym-${dateKey(date)}`,
-      title: `Gym: ${gym.muscleGroup}`,
-      category: 'gym', allDay: false,
-      start: `${dateKey(date)}T${cfg.gymTime}`, end: null,
-      virtual: true,
-    });
-  }
-  tmsPlanForDate(date).forEach((st, i) => {
-    events.push({
-      id: `virtual-tms-${dateKey(date)}-${st.id}`,
-      title: `TMS üben: ${st.name}`,
-      category: 'tms', allDay: false,
-      start: `${dateKey(date)}T${cfg.tmsTime}`, end: null,
-      virtual: true,
-    });
-  });
-  return events;
+  return [];
 }
 
 // --- Local (user-created / google-synced) events, with weekly expansion ----

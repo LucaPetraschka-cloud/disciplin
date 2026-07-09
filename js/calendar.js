@@ -2,7 +2,7 @@ import { Store } from './store.js';
 import { navigate } from './router.js';
 import { ICONS } from './icons.js';
 import {
-  WEEKDAY_LABELS, MONTH_LABELS, dateKey, getEventsForDate, categoryColor, categoryLabel, formatTime,
+  WEEKDAY_LABELS, MONTH_LABELS, dateKey, getEventsForDate, categoryColor, eventColor, categoryLabel, formatTime,
 } from './calendarUtils.js';
 
 let state = { view: 'month', selected: new Date() };
@@ -22,7 +22,7 @@ function agendaHtml(date) {
   if (!events.length) return `<div class="empty-state">Keine Termine.</div>`;
   return events.map(ev => `
     <div class="event-row" data-ev="${ev.id}" data-virtual="${!!ev.virtual}">
-      <div class="bar" style="background:${categoryColor(ev.category)}"></div>
+      <div class="bar" style="background:${eventColor(ev)}"></div>
       <div class="time">${formatTime(ev.start)}</div>
       <div class="body">
         <div class="title">${ev.title}</div>
@@ -43,8 +43,8 @@ function renderAgenda(el, date) {
 }
 
 function dayEventDots(date) {
-  const cats = [...new Set(getEventsForDate(date).map(e => e.category))].slice(0, 3);
-  return cats.map(c => `<span style="background:${categoryColor(c)}"></span>`).join('');
+  const colors = [...new Set(getEventsForDate(date).map(e => eventColor(e)))].slice(0, 3);
+  return colors.map(c => `<span style="background:${c}"></span>`).join('');
 }
 
 function renderMonthGrid(el) {
