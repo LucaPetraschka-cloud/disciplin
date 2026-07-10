@@ -46,13 +46,18 @@ function list(table) { return read(table); }
 function upsert(table, record, { silent = false, fromRemote = false } = {}) {
   const rows = read(table);
   const now = new Date().toISOString();
-  const idx = rows.findIndex(r => r.id === record.id);
+  // Only match an existing row when the caller really passed an id. Callers may
+  // pass { id: undefined } for new records — matching on undefined would grab an
+  // unrelated row and merge into it (the bug that made habit ticks overwrite
+  // each other). The id is also set AFTER spreading the record, so a passed
+  // undefined id can never clobber the generated one.
+  const idx = record.id != null ? rows.findIndex(r => r.id === record.id) : -1;
   let full;
   if (idx >= 0) {
     full = { ...rows[idx], ...record, updatedAt: now };
     rows[idx] = full;
   } else {
-    full = { id: record.id || uid(), createdAt: now, updatedAt: now, ...record };
+    full = { createdAt: now, ...record, id: record.id ?? uid(), updatedAt: now };
     rows.push(full);
   }
   write(table, rows);
@@ -134,6 +139,18 @@ function seedDefaults() {
   }
 }
 seedDefaults();
+
+// One-time repair: an earlier upsert bug could store rows without an id (habit
+// ticks then overwrote each other). Give such rows a proper id so they behave
+// like normal records again.
+(function repairMissingIds() {
+  ['gymDays', 'gymExercises', 'gymLogs', 'tmsSessions', 'tmsBaseline', 'habits', 'habitLogs', 'todos', 'calendarEvents'].forEach(t => {
+    const rows = read(t);
+    let changed = false;
+    rows.forEach(r => { if (r.id == null) { r.id = uid(); changed = true; } });
+    if (changed) write(t, rows);
+  });
+})();
 
 // ---------------------------------------------------------------------------
 // Config (settings that aren't a list table)
