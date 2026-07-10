@@ -1,4 +1,4 @@
-const CACHE = 'disciplin-v5';
+const CACHE = 'disciplin-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -46,10 +46,14 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (url.origin !== location.origin) return;
 
+  // 'no-cache' bypasses the HTTP disk cache (revalidates with the server), so
+  // deploys show up on next launch instead of after the cache max-age expires.
+  // Navigation requests must not get a RequestInit — older WebKit throws
+  // "cannot construct a Request with mode 'navigate'" and the app won't load.
+  const req = e.request.mode === 'navigate' ? e.request : new Request(e.request, { cache: 'no-cache' });
+
   e.respondWith(
-    // 'no-cache' bypasses the HTTP disk cache (revalidates with the server), so
-    // deploys show up on next launch instead of after the cache max-age expires.
-    fetch(e.request, { cache: 'no-cache' })
+    fetch(req)
       .then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((cache) => cache.put(e.request, copy));

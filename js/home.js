@@ -120,13 +120,22 @@ function nowNextHtml() {
 // --- screen -------------------------------------------------------------------
 
 export function render(el) {
+  // One store listener + one clock for the whole screen lifetime. draw() only
+  // rebuilds the DOM — it must never register anything persistent, otherwise
+  // every sync event would stack another listener (exponential re-renders that
+  // froze the UI: clicks dead, scrolling still alive).
+  let disposed = false;
+  let redrawTimer = null;
+  let range = { startH: 8, endH: 16 };
+
+  const draw = () => {
   const quote = getDailyQuote();
   const now = new Date();
   const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
 
   const evsToday = timedEventsFor(now);
   const evsTomorrow = timedEventsFor(tomorrow);
-  const range = computeRange(evsToday, evsTomorrow);
+  range = computeRange(evsToday, evsTomorrow);
 
   const weekdayLong = now.toLocaleDateString('de-DE', { weekday: 'long' });
 
@@ -161,9 +170,13 @@ export function render(el) {
   el.querySelector('#day-widget').addEventListener('click', () => navigate('/calendar'));
   el.querySelector('#settings-btn').addEventListener('click', () => navigate('/settings'));
   el.querySelectorAll('[data-nav]').forEach(t => t.addEventListener('click', () => navigate(t.dataset.nav)));
+  }; // end draw()
+
+  draw();
 
   // keep the now-line + now/next row current without re-rendering everything
   const tick = setInterval(() => {
+    if (disposed) return;
     const nowLine = el.querySelector('#now-line');
     if (nowLine) {
       const d = new Date(); const dayStart = new Date(d); dayStart.setHours(0, 0, 0, 0);
@@ -174,6 +187,12 @@ export function render(el) {
     if (nn) nn.innerHTML = nowNextHtml();
   }, 60000);
 
-  const off = Store.on('mutation', () => render(el));
-  return () => { off(); clearInterval(tick); };
+  // Coalesce bursts of sync events (initial pull, realtime echoes) into one redraw.
+  const off = Store.on('mutation', () => {
+    if (disposed) return;
+    clearTimeout(redrawTimer);
+    redrawTimer = setTimeout(() => { if (!disposed) draw(); }, 100);
+  });
+
+  return () => { disposed = true; off(); clearInterval(tick); clearTimeout(redrawTimer); };
 }
