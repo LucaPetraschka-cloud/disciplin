@@ -153,14 +153,25 @@ function renderCalendarSettings(el) {
 }
 
 // ---------------------------------------------------------------------------
+// Really delete a habit: the habit row plus its log history, synced everywhere.
+function deleteHabit(id) {
+  Store.list('habitLogs').filter(l => l.habitId === id).forEach(l => Store.remove('habitLogs', l.id));
+  Store.remove('habits', id);
+}
+
 function renderHabits(el) {
   el.innerHTML = `${topbar('Habits', 'Verwalten')}<div id="habit-settings-body"></div>
     <button class="btn primary" id="add-habit" style="width:100%;">+ Habit hinzufügen</button>`;
   wireBack(el, '/settings');
 
+  // One-time cleanup: older app versions "deleted" habits by hiding them
+  // (active:false). Those ghosts stayed in this list and couldn't be removed —
+  // purge them for real (also pushes the delete to the other devices).
+  Store.list('habits').filter(h => h.active === false).forEach(h => deleteHabit(h.id));
+
   function draw() {
     const body = el.querySelector('#habit-settings-body');
-    const habits = Store.list('habits');
+    const habits = Store.list('habits').sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     body.innerHTML = `<div class="card">${habits.map(h => `
       <div data-habit="${h.id}" style="padding:10px 0;border-bottom:1px solid var(--gridline);">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
@@ -178,12 +189,19 @@ function renderHabits(el) {
       const id = row.dataset.habit;
       row.querySelector('.h-name').addEventListener('change', (e) => Store.upsert('habits', { id, name: e.target.value }));
       row.querySelectorAll('.pick').forEach(btn => btn.addEventListener('click', () => { Store.upsert('habits', { id, color: btn.dataset.color }); draw(); }));
-      row.querySelector('.del').addEventListener('click', () => { Store.upsert('habits', { id, active: false }); draw(); });
+      row.querySelector('.del').addEventListener('click', () => {
+        const h = Store.list('habits').find(x => x.id === id);
+        if (!confirm(`Habit „${h?.name || ''}" wirklich löschen? Auch der Verlauf wird entfernt.`)) return;
+        deleteHabit(id);
+        draw();
+      });
     });
   }
   draw();
   el.querySelector('#add-habit').addEventListener('click', () => {
-    Store.upsert('habits', { name: 'Neuer Habit', color: `var(${SERIES_SWATCHES[Store.list('habits').length % 8]})`, order: Store.habits().length, active: true });
+    const all = Store.list('habits');
+    const nextOrder = all.length ? Math.max(...all.map(h => h.order ?? 0)) + 1 : 0;
+    Store.upsert('habits', { name: 'Neuer Habit', color: `var(${SERIES_SWATCHES[all.length % 8]})`, order: nextOrder, active: true });
     draw();
   });
 }

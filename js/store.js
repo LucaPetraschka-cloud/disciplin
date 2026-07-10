@@ -167,7 +167,7 @@ export const Store = {
   gymExercises: (dayId) => list('gymExercises').filter(e=>e.dayId===dayId).sort((a,b)=>a.order-b.order),
   gymLogs: (exerciseId) => list('gymLogs').filter(l=>l.exerciseId===exerciseId).sort((a,b)=>a.date.localeCompare(b.date)),
   tmsSessions: (subtestId) => list('tmsSessions').filter(s => !subtestId || s.subtestId===subtestId).sort((a,b)=>a.date.localeCompare(b.date)),
-  habits: () => list('habits').filter(h=>h.active!==false).sort((a,b)=>a.order-b.order),
+  habits: () => list('habits').filter(h=>h.active!==false).sort((a,b)=>(a.order??0)-(b.order??0)),
   habitLogs: (habitId) => list('habitLogs').filter(l=>l.habitId===habitId),
   todos: (mKey = monthKey()) => list('todos').filter(t=>t.monthKey===mKey).sort((a,b)=>a.order-b.order),
   calendarEvents: () => list('calendarEvents'),
