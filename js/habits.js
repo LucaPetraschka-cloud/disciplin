@@ -6,37 +6,73 @@ import { lineChart, destroyChart, resolveColor } from './charts.js';
 function daysInMonth(year, month) { return new Date(year, month + 1, 0).getDate(); }
 
 let habitChart = null;
+let chartHabitId = 'all'; // 'all' = Überdiagramm mit allen Habits
 
-// Daily completion rate this month: share of active habits ticked off each day.
-function habitCompletionSeries() {
+// Cumulative "days done this month" for one habit — a rising line per habit.
+function cumulativeSeries(habit) {
   const now = new Date();
   const y = now.getFullYear(), m = now.getMonth(), todayNum = now.getDate();
   const mp = String(m + 1).padStart(2, '0');
-  const habits = Store.habits();
-  const total = habits.length || 1;
-  const logsByHabit = habits.map(h => Store.habitLogs(h.id));
+  const doneSet = new Set(
+    Store.habitLogs(habit.id).filter(l => l.done && l.date.startsWith(`${y}-${mp}`)).map(l => Number(l.date.slice(8, 10)))
+  );
   const labels = [], data = [];
+  let sum = 0;
   for (let d = 1; d <= todayNum; d++) {
-    const dk = `${y}-${mp}-${String(d).padStart(2, '0')}`;
-    let done = 0;
-    logsByHabit.forEach(logs => { if (logs.some(l => l.date === dk && l.done)) done++; });
+    if (doneSet.has(d)) sum++;
     labels.push(String(d));
-    data.push(Math.round((done / total) * 100));
+    data.push(sum);
   }
   return { labels, data };
+}
+
+function renderChartTabs(el) {
+  const wrap = el.querySelector('#habit-chart-tabs');
+  if (!wrap) return;
+  const habits = Store.habits();
+  if (chartHabitId !== 'all' && !habits.some(h => h.id === chartHabitId)) chartHabitId = 'all';
+  wrap.innerHTML = [{ id: 'all', name: 'Alle', color: null }, ...habits].map(t => {
+    const active = chartHabitId === t.id;
+    const c = t.color ? resolveColor(t.color) : null;
+    return `<button class="pill-tab ${active ? 'active' : ''}" data-ch="${t.id}"
+      style="${active && c ? `background:${c};color:#000;border-color:${c}` : ''}">${t.name}</button>`;
+  }).join('');
+  wrap.querySelectorAll('[data-ch]').forEach(btn => btn.addEventListener('click', () => {
+    chartHabitId = btn.dataset.ch;
+    renderChartTabs(el);
+    renderHabitChart(el);
+  }));
 }
 
 function renderHabitChart(el) {
   const canvas = el.querySelector('#habit-chart');
   if (!canvas || !window.Chart) return;
-  const { labels, data } = habitCompletionSeries();
+  const habits = Store.habits();
   destroyChart(habitChart);
-  const green = resolveColor('var(--section-habits)');
-  habitChart = lineChart(canvas.getContext('2d'), {
-    labels,
-    datasets: [{ data, color: green, fill: true, backgroundColor: green + '22' }],
-    yLabel: '% erledigt', suggestedMax: 100,
-  });
+  habitChart = null;
+  const legend = el.querySelector('#habit-chart-legend');
+  if (!habits.length) { if (legend) legend.innerHTML = ''; return; }
+
+  if (chartHabitId === 'all') {
+    const series = habits.map(h => ({ h, s: cumulativeSeries(h) }));
+    habitChart = lineChart(canvas.getContext('2d'), {
+      labels: series[0].s.labels,
+      datasets: series.map(({ h, s }) => ({ data: s.data, color: resolveColor(h.color), label: h.name })),
+      yLabel: 'Tage geschafft', yStep: 1,
+    });
+    if (legend) legend.innerHTML = habits.map(h =>
+      `<span class="item"><span class="dot" style="background:${h.color}"></span>${h.name}</span>`).join('');
+  } else {
+    const habit = habits.find(h => h.id === chartHabitId);
+    const s = cumulativeSeries(habit);
+    const c = resolveColor(habit.color);
+    habitChart = lineChart(canvas.getContext('2d'), {
+      labels: s.labels,
+      datasets: [{ data: s.data, color: c, fill: true, backgroundColor: c + '22', label: habit.name }],
+      yLabel: 'Tage geschafft', yStep: 1,
+    });
+    if (legend) legend.innerHTML = '';
+  }
 }
 
 function habitCard(habit) {
@@ -82,19 +118,16 @@ function renderHabits(el) {
     return;
   }
   wrap.innerHTML = habits.map(habitCard).join('');
+  // Only today is tappable — past days are read-only history (no cheating),
+  // future days are locked anyway.
   wrap.querySelectorAll('.habit-card').forEach(card => {
     const habitId = card.dataset.habit;
-    card.querySelectorAll('.bar-col:not(.future)').forEach(bar => {
-      bar.addEventListener('click', () => {
-        const now = new Date();
-        const dayNum = Number(bar.dataset.day);
-        const date = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`;
-        const logs = Store.list('habitLogs');
-        const existing = logs.find(l => l.habitId === habitId && l.date === date);
-        Store.upsert('habitLogs', { id: existing?.id, habitId, date, done: !(existing && existing.done) });
-        renderHabits(el);
-        renderHabitChart(el);
-      });
+    card.querySelector('.bar-col.today')?.addEventListener('click', () => {
+      const date = Store.todayKey();
+      const existing = Store.list('habitLogs').find(l => l.habitId === habitId && l.date === date);
+      Store.upsert('habitLogs', { id: existing?.id, habitId, date, done: !(existing && existing.done) });
+      renderHabits(el);
+      renderHabitChart(el);
     });
   });
 }
@@ -137,8 +170,9 @@ export function render(el) {
     <div>
     <div class="card">
       <div class="card-title-row"><h2>Habits — ${MONTH_NOW}</h2></div>
-      <div class="hint" style="margin-bottom:8px;">Anteil erledigter Habits pro Tag</div>
-      <div style="height:150px;position:relative;"><canvas id="habit-chart"></canvas></div>
+      <div class="tab-row" id="habit-chart-tabs" style="margin-bottom:8px;"></div>
+      <div style="height:170px;position:relative;"><canvas id="habit-chart"></canvas></div>
+      <div class="chart-legend" id="habit-chart-legend"></div>
     </div>
     <div id="habits-list"></div>
     </div>
@@ -171,11 +205,12 @@ export function render(el) {
   el.querySelector('#new-todo').addEventListener('keydown', (e) => { if (e.key === 'Enter') addTodo(); });
 
   renderHabits(el);
+  renderChartTabs(el);
   renderHabitChart(el);
   renderTodos(el);
 
   const off = Store.on('mutation', (d) => {
-    if (d.fromRemote && ['habits','habitLogs'].includes(d.table)) { renderHabits(el); renderHabitChart(el); }
+    if (d.fromRemote && ['habits','habitLogs'].includes(d.table)) { renderHabits(el); renderChartTabs(el); renderHabitChart(el); }
     if (d.fromRemote && d.table === 'todos') renderTodos(el);
   });
   return () => { off(); destroyChart(habitChart); };

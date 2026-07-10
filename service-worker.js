@@ -1,4 +1,4 @@
-const CACHE = 'disciplin-v8';
+const CACHE = 'disciplin-v9';
 const ASSETS = [
   './',
   './index.html',

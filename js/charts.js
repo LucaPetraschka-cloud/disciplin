@@ -40,7 +40,7 @@ function baseTooltip() {
   };
 }
 
-export function lineChart(ctx, { labels, datasets, yLabel, suggestedMax, targetLine } = {}) {
+export function lineChart(ctx, { labels, datasets, yLabel, suggestedMax, yStep } = {}) {
   const plugins = [];
   return new Chart(ctx, {
     type: 'line',
@@ -78,7 +78,7 @@ export function lineChart(ctx, { labels, datasets, yLabel, suggestedMax, targetL
         y: {
           suggestedMax,
           grid: { color: GRID() },
-          ticks: { color: MUTED(), font: { size: 10.5 } },
+          ticks: { color: MUTED(), font: { size: 10.5 }, stepSize: yStep, precision: 0 },
           border: { display: false },
           title: yLabel ? { display: true, text: yLabel, color: MUTED(), font: { size: 10.5 } } : undefined,
         },
