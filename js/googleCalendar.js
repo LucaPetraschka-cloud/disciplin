@@ -3,8 +3,16 @@
 // Scope is read-only: the app only needs "an entry in Google Calendar shows up
 // here too", not write-back.
 import { Store } from './store.js';
+import { bulkPush, bulkRemove } from './sync.js';
 
 const TOKEN_KEY = 'disciplin.googleToken';
+const WAS_CONNECTED_KEY = 'disciplin.googleWasConnected';
+
+// True when Google was connected on this device before but the (1h) token has
+// expired — the calendar shows a one-tap reconnect hint in that case.
+export function needsReconnect() {
+  return !isGoogleConnected() && localStorage.getItem(WAS_CONNECTED_KEY) === '1';
+}
 let accessToken = null;
 let tokenExpiry = 0;
 
@@ -46,6 +54,7 @@ export async function connectGoogle() {
         accessToken = resp.access_token;
         tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
         localStorage.setItem(TOKEN_KEY, JSON.stringify({ accessToken, tokenExpiry }));
+        localStorage.setItem(WAS_CONNECTED_KEY, '1');
         fetchGoogleEvents().then(resolve).catch(reject);
       },
     });
@@ -57,6 +66,7 @@ export function disconnectGoogle() {
   accessToken = null;
   tokenExpiry = 0;
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(WAS_CONNECTED_KEY);
 }
 
 // Google returns RFC3339 timestamps (often UTC, e.g. "...T04:00:00Z"). The rest
@@ -77,6 +87,12 @@ export async function fetchGoogleEvents() {
   const calId = encodeURIComponent(cfg.googleCalendarId || 'primary');
   const url = `https://www.googleapis.com/calendar/v3/calendars/${calId}/events?timeMin=${timeMin.toISOString()}&timeMax=${timeMax.toISOString()}&singleEvents=true&orderBy=startTime&maxResults=250`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (res.status === 401 || res.status === 403) {
+    // Token no longer valid — drop it (but remember the connection, so the
+    // calendar can offer a one-tap reconnect) and keep the stored events.
+    accessToken = null; tokenExpiry = 0; localStorage.removeItem(TOKEN_KEY);
+    throw new Error('Google-Verbindung abgelaufen — bitte neu verbinden.');
+  }
   if (!res.ok) throw new Error('Google Kalender Abruf fehlgeschlagen (' + res.status + ')');
   const data = await res.json();
   const existingGoogle = Store.list('calendarEvents').filter(e => e.source === 'google');
@@ -94,8 +110,14 @@ export async function fetchGoogleEvents() {
       allDay: !item.start.dateTime,
     }, { silent: true });
   });
-  existingGoogle.forEach(e => { if (!seenIds.has(e.googleEventId)) Store.remove('calendarEvents', e.id, { silent: true }); });
+  const removedIds = existingGoogle.filter(e => !seenIds.has(e.googleEventId)).map(e => e.id);
+  removedIds.forEach(id => Store.remove('calendarEvents', id, { silent: true }));
   Store.emit('mutation', { table: 'calendarEvents', op: 'refresh' });
+
+  // Mirror the Google events to Supabase in bulk so every signed-in device
+  // shows them — even devices that never connected Google themselves.
+  bulkPush('calendarEvents', Store.list('calendarEvents').filter(e => e.source === 'google')).catch(() => {});
+  bulkRemove('calendarEvents', removedIds).catch(() => {});
 }
 
 export function initGoogleAutoRefresh() {

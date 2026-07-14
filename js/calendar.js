@@ -4,6 +4,7 @@ import { ICONS } from './icons.js';
 import {
   WEEKDAY_LABELS, MONTH_LABELS, dateKey, getEventsForDate, categoryColor, eventColor, categoryLabel, formatTime,
 } from './calendarUtils.js';
+import { needsReconnect, connectGoogle } from './googleCalendar.js';
 
 let state = { view: 'month', selected: new Date() };
 state.selected.setHours(0, 0, 0, 0);
@@ -179,6 +180,11 @@ export function render(el) {
       ${['day','week','month','year'].map(v => `<button data-view="${v}" class="${state.view===v?'active':''}">${{day:'Tag',week:'Woche',month:'Monat',year:'Jahr'}[v]}</button>`).join('')}
     </div>
 
+    ${needsReconnect() ? `
+    <button class="btn" id="g-reconnect" style="width:100%;margin-bottom:14px;border-color:rgba(232,185,74,0.4);color:var(--accent-gold);">
+      Google-Verbindung abgelaufen — antippen zum Neu-Verbinden
+    </button>` : ''}
+
     <div class="card" id="event-form" style="display:none;">
       <div class="card-title-row"><h2>Neuer Termin</h2><button class="btn ghost" id="close-form">Schließen</button></div>
       <div class="field-group"><label class="field">Titel</label><input type="text" id="f-ev-title" placeholder="z.B. Anatomie Vorlesung"></div>
@@ -243,8 +249,15 @@ export function render(el) {
     renderAll(el);
   });
 
+  el.querySelector('#g-reconnect')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true; btn.textContent = 'Verbinde…';
+    try { await connectGoogle(); btn.remove(); renderAll(el); }
+    catch (err) { alert('Verbindung fehlgeschlagen: ' + err.message); btn.disabled = false; btn.textContent = 'Google-Verbindung abgelaufen — antippen zum Neu-Verbinden'; }
+  });
+
   renderView(el);
 
-  const off = Store.on('mutation', (d) => { if (d.fromRemote && ['calendarEvents','gymDays'].includes(d.table)) renderAll(el); });
+  const off = Store.on('mutation', (d) => { if (d.fromRemote && ['calendarEvents','gymDays','*'].includes(d.table)) renderAll(el); });
   return off;
 }

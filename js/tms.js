@@ -243,8 +243,8 @@ export function render(el) {
 
   const off = Store.on('mutation', (d) => {
     if (!d.fromRemote) return;
-    if (d.table === 'tmsSessions') { renderChart(el); renderLog(el); }
-    if (d.table === 'tmsBaseline') { renderHeader(el); if (!state.editBaseline) renderBaselineCard(el); }
+    if (['tmsSessions','*'].includes(d.table)) { renderChart(el); renderLog(el); }
+    if (['tmsBaseline','*'].includes(d.table)) { renderHeader(el); if (!state.editBaseline) renderBaselineCard(el); }
   });
   return () => { off(); destroyChart(chart); };
 }

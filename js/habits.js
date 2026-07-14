@@ -210,8 +210,8 @@ export function render(el) {
   renderTodos(el);
 
   const off = Store.on('mutation', (d) => {
-    if (d.fromRemote && ['habits','habitLogs'].includes(d.table)) { renderHabits(el); renderChartTabs(el); renderHabitChart(el); }
-    if (d.fromRemote && d.table === 'todos') renderTodos(el);
+    if (d.fromRemote && ['habits','habitLogs','*'].includes(d.table)) { renderHabits(el); renderChartTabs(el); renderHabitChart(el); }
+    if (d.fromRemote && ['todos','*'].includes(d.table)) renderTodos(el);
   });
   return () => { off(); destroyChart(habitChart); };
 }

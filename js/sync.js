@@ -20,18 +20,29 @@ export function syncStatus() {
   return { connected: !!(client && session), email: session?.user?.email || null };
 }
 
+// Supabase fires auth events on every token refresh and app foreground — live
+// sync must only (re)start when the signed-in user actually changes, otherwise
+// realtime channels stack up with every focus and the app gets slower and slower.
+let lastUserId = null;
+function handleSession(s) {
+  session = s; // keep the freshest token for pushes
+  const uid = s?.user?.id || null;
+  if (uid && uid !== lastUserId) {
+    lastUserId = uid;
+    startLiveSync();
+  } else if (!uid && lastUserId) {
+    lastUserId = null;
+    teardown(false);
+  }
+}
+
 export function configureSupabase(url, anonKey) {
   teardown();
+  lastUserId = null;
   if (!url || !anonKey || !window.supabase) return;
   client = window.supabase.createClient(url, anonKey);
-  client.auth.getSession().then(({ data }) => {
-    session = data.session;
-    if (session) startLiveSync();
-  });
-  client.auth.onAuthStateChange((_event, s) => {
-    session = s;
-    if (s) startLiveSync(); else teardown(false);
-  });
+  client.auth.getSession().then(({ data }) => handleSession(data.session));
+  client.auth.onAuthStateChange((_event, s) => handleSession(s));
 }
 
 export async function signInWithEmail(email) {
@@ -114,10 +125,36 @@ function wirePush() {
   });
 }
 
+let syncStarting = false;
 async function startLiveSync() {
-  await initialPull();
-  subscribeRealtime();
-  wirePush();
+  if (syncStarting) return;
+  syncStarting = true;
+  try {
+    // Drop any previous subscriptions first — restarting must never stack channels.
+    channels.forEach(ch => client?.removeChannel(ch));
+    channels = [];
+    await initialPull();
+    subscribeRealtime();
+    wirePush();
+  } finally {
+    syncStarting = false;
+  }
+}
+
+// Bulk mirror for locally generated rows (e.g. Google-Kalender events): one
+// request instead of one push per row, so they exist on every signed-in device.
+export async function bulkPush(table, records) {
+  if (!client || !session || !records.length) return;
+  const now = new Date().toISOString();
+  const rows = records.map(({ id, ...data }) => ({ id, user_id: session.user.id, data, updated_at: now }));
+  const { error } = await client.from(TABLE_SQL_NAME[table]).upsert(rows);
+  if (error) console.warn('bulk push failed', table, error.message);
+}
+
+export async function bulkRemove(table, ids) {
+  if (!client || !session || !ids.length) return;
+  const { error } = await client.from(TABLE_SQL_NAME[table]).delete().in('id', ids).eq('user_id', session.user.id);
+  if (error) console.warn('bulk remove failed', table, error.message);
 }
 
 export function initSync() {

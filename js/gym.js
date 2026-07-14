@@ -152,7 +152,7 @@ export function render(el) {
   renderChart(el);
 
   const off = Store.on('mutation', (d) => {
-    if (d.fromRemote && ['gymDays','gymExercises','gymLogs'].includes(d.table)) {
+    if (d.fromRemote && ['gymDays','gymExercises','gymLogs','*'].includes(d.table)) {
       renderDayCard(el); populateExercisePicker(el); renderChart(el);
     }
   });
